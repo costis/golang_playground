@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"sync"
 	"text/template"
+	"github.com/costis/golang_playground/chat/trace"
+	"os"
 )
 
 type TemplateHandler struct {
@@ -23,11 +25,14 @@ func (tHandler *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 }
 
 func newRoom() *room {
+	t := trace.New(os.Stdout)
+
 	return &room{
 		forward: make(chan []byte),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
+		tracer:  t,
 	}
 }
 
