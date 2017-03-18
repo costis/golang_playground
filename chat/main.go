@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
+	"github.com/costis/golang_playground/chat/trace"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"text/template"
-	"github.com/costis/golang_playground/chat/trace"
-	"os"
 )
 
 type TemplateHandler struct {
@@ -24,8 +24,15 @@ func (tHandler *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	tHandler.tmpl.Execute(w, r)
 }
 
-func newRoom() *room {
-	t := trace.New(os.Stdout)
+func newRoom(withTrace bool) *room {
+	var t trace.Tracer
+
+	if withTrace {
+		t = trace.New(os.Stdout)
+
+	} else {
+		t = trace.Off()
+	}
 
 	return &room{
 		forward: make(chan []byte),
@@ -38,9 +45,10 @@ func newRoom() *room {
 
 func main() {
 	var addr = flag.String("addr", "localhost:8080", "The address of the app")
+	var withTrace = flag.Bool("tracing", false, "Enable tracing")
 	flag.Parse()
 
-	r := newRoom()
+	r := newRoom(*withTrace)
 	http.Handle("/", &TemplateHandler{filename: "templates/chat.html"})
 	http.Handle("/room", r)
 	go r.run()
@@ -50,12 +58,3 @@ func main() {
 		log.Fatal("Fuckedup", err)
 	}
 }
-
-//func main() {
-//	http.Handle("/", &TemplateHandler{filename: "templates/chat.html"})
-//
-//	err2 := http.ListenAndServe("localhost:8080", nil)
-//	if err2 != nil {
-//		log.Fatal(err2)
-//	}
-//}

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/costis/golang_playground/chat/trace"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"github.com/costis/golang_playground/chat/trace"
 )
 
 const (

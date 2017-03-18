@@ -20,3 +20,13 @@ type tracer struct {
 func (t *tracer) Trace(a ...interface{}) {
 	fmt.Fprint(t.out, a...)
 }
+
+func Off() Tracer {
+	return &silentTracer{}
+}
+
+type silentTracer struct {
+}
+
+func (t *silentTracer) Trace(a ...interface{}) {
+}
