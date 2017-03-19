@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/costis/golang_playground/chat/trace"
+	"github.com/costis/golang_playground/gpbp2/chat/trace"
 	"log"
 	"net/http"
 	"os"

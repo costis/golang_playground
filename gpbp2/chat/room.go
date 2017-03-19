@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/costis/golang_playground/chat/trace"
+	"github.com/costis/golang_playground/gpbp2/chat/trace"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
