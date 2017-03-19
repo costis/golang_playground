@@ -49,8 +49,15 @@ func main() {
 	flag.Parse()
 
 	r := newRoom(*withTrace)
-	http.Handle("/", &TemplateHandler{filename: "templates/chat.html"})
+
+	tHandler := &TemplateHandler{filename: "templates/chat.html"}
+	tLogin := &TemplateHandler{filename: "templates/login.html"}
+
+	http.Handle("/", MustAuth(tHandler))
+	http.Handle("/login", tLogin)
 	http.Handle("/room", r)
+	http.HandleFunc("/auth/", loginHandler)
+
 	go r.run()
 
 	log.Println("Starting web server at address:", *addr)
