@@ -18,6 +18,27 @@
             <p>Select the service you would like to sign in with:</p>
             <ul>
                 <li>
+
+
+                    <form action="/doLogin" method="post">
+                        <div class="form-group">
+
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password">
+
+                        </div>
+
+                        <button type="submit" class="btn btn-default">Login</button>
+                    </form>
+
+
+                </li>
+                <li>
                     <a href="/auth/login/facebook">Facebook</a>
                 </li>
                 <li>

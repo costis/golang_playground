@@ -10,6 +10,10 @@ import (
 	"text/template"
 )
 
+const (
+	AuthCookieName = "chat_cookie_id"
+)
+
 type TemplateHandler struct {
 	once     sync.Once
 	filename string
@@ -53,10 +57,28 @@ func main() {
 	tHandler := &TemplateHandler{filename: "templates/chat.html"}
 	tLogin := &TemplateHandler{filename: "templates/login.html"}
 
-	http.Handle("/", MustAuth(tHandler))
+	http.HandleFunc("/doLogin", func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Somethihng was fucked up", http.StatusUnprocessableEntity)
+		}
+
+		username := r.PostForm.Get("username")
+		password := r.PostForm.Get("password")
+
+		if username == "user" && password == "pass" {
+			http.SetCookie(w, &http.Cookie{Name: AuthCookieName, Value: "boo"})
+			w.Header().Add("Location", "/")
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		} else {
+			w.Header().Add("Location", "/login")
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		}
+	})
+
 	http.Handle("/login", tLogin)
 	http.Handle("/room", r)
 	http.HandleFunc("/auth/", loginHandler)
+	http.Handle("/", MustAuthWithCookie(tHandler))
 
 	go r.run()
 

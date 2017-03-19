@@ -11,6 +11,10 @@ type authHander struct {
 	next http.Handler
 }
 
+type cookieAuthHandler struct {
+	next http.Handler
+}
+
 func (h *authHander) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie("auth")
 
@@ -29,8 +33,28 @@ func (h *authHander) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.next.ServeHTTP(w, r)
 }
 
+func (h *cookieAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	_, err := r.Cookie(AuthCookieName)
+
+	if err == http.ErrNoCookie {
+		w.Header().Add("Location", "/login")
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	h.next.ServeHTTP(w, r)
+}
+
 func MustAuth(nextHandler http.Handler) http.Handler {
 	return &authHander{next: nextHandler}
+}
+
+func MustAuthWithCookie(nextHandler http.Handler) http.Handler {
+	return &cookieAuthHandler{next: nextHandler}
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
