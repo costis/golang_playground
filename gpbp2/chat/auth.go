@@ -34,6 +34,7 @@ func (h *cookieAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.next.ServeHTTP(w, r)
 	} else {
 		w.Header().Add("Location", "/doLogin")
+		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
 }
 
