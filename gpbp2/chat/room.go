@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"os"
 )
 
 const (
@@ -63,3 +64,23 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	client.read()
 }
+
+func newRoom(withTrace bool) *room {
+	var t trace.Tracer
+
+	if withTrace {
+		t = trace.New(os.Stdout)
+
+	} else {
+		t = trace.Off()
+	}
+
+	return &room{
+		forward: make(chan []byte),
+		join:    make(chan *client),
+		leave:   make(chan *client),
+		clients: make(map[*client]bool),
+		tracer:  t,
+	}
+}
+

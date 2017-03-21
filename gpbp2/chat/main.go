@@ -2,10 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/costis/golang_playground/gpbp2/chat/trace"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"text/template"
 )
@@ -26,25 +24,6 @@ func (tHandler *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	})
 
 	tHandler.tmpl.Execute(w, r)
-}
-
-func newRoom(withTrace bool) *room {
-	var t trace.Tracer
-
-	if withTrace {
-		t = trace.New(os.Stdout)
-
-	} else {
-		t = trace.Off()
-	}
-
-	return &room{
-		forward: make(chan []byte),
-		join:    make(chan *client),
-		leave:   make(chan *client),
-		clients: make(map[*client]bool),
-		tracer:  t,
-	}
 }
 
 func main() {
