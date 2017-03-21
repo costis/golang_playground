@@ -55,7 +55,7 @@ func main() {
 	})
 
 	http.Handle("/login", tLogin)
-	http.Handle("/room", r)
+	http.Handle("/room", MustAuthWithCookie(r))
 	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/", MustAuthWithCookie(tHandler))
 
