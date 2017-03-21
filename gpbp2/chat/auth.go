@@ -17,18 +17,24 @@ type cookieAuthHandler struct {
 
 func (h *cookieAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	_, err := r.Cookie(AuthCookieName)
+	// TODO: associate cookie with a session entry
+	cookie, err := r.Cookie(AuthCookieName)
 
 	if err == http.ErrNoCookie {
 		w.Header().Add("Location", "/login")
 		w.WriteHeader(http.StatusTemporaryRedirect)
+		return
 	}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.next.ServeHTTP(w, r)
+	if cookie.Value == "12345" {
+		h.next.ServeHTTP(w, r)
+	} else {
+		w.Header().Add("Location", "/doLogin")
+	}
 }
 
 func MustAuthWithCookie(nextHandler http.Handler) http.Handler {

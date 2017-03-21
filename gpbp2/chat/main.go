@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"text/template"
+	"time"
 )
 
 const (
@@ -45,7 +46,7 @@ func main() {
 		password := r.PostForm.Get("password")
 
 		if username == "user" && password == "pass" {
-			http.SetCookie(w, &http.Cookie{Name: AuthCookieName, Value: "boo"})
+			http.SetCookie(w, &http.Cookie{Name: AuthCookieName, Value: "12345"})
 			w.Header().Add("Location", "/")
 			w.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
@@ -54,7 +55,29 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+
+		_, err := r.Cookie(AuthCookieName)
+
+		if err == http.ErrNoCookie {
+			// he doesn't have the cookie, redirect.
+			w.Header().Add("Location", "/")
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		// he has the cookie, delete it's value and redirect to home
+		http.SetCookie(w, &http.Cookie{Name: AuthCookieName, Value: "", Expires: time.Now().AddDate(0, 0, 1)})
+
+		w.Header().Add("Location", "/")
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	})
+
 	http.Handle("/login", tLogin)
+
 	http.Handle("/room", MustAuthWithCookie(r))
 	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/", MustAuthWithCookie(tHandler))
