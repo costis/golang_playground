@@ -15,6 +15,7 @@ func (u Person) Speak(s string) string {
 	return s
 }
 
+
 // A func with a T value receiver can receive both type values and type pointers.
 func main() {
 	uPointer := &Person{"Cos", "Pan"}
