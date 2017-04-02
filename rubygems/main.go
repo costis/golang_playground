@@ -22,6 +22,8 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	defer rows.Close()
+	// or just rows.Close()?
 
 	for rows.Next() {
 		err := rows.Scan(&name)
@@ -31,4 +33,10 @@ func main() {
 
 		fmt.Println(name)
 	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
