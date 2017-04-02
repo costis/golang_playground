@@ -11,19 +11,27 @@ var (
 	name string
 )
 
+
+
 func main() {
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
-	rows, err := db.Query("SELECT name from rubygems LIMIT 20")
+	stmt, err := db.Prepare("SELECT name from rubygems WHERE id > $1 LIMIT 10")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer stmt.Close()
+
+	rows, err := stmt.Query(100)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer rows.Close()
-	// or just rows.Close()?
+	// do we need this? or just db.Close() is enough?
 
 	for rows.Next() {
 		err := rows.Scan(&name)
