@@ -11,7 +11,9 @@ var (
 	name string
 )
 
-
+type rubygem struct {
+	Name string
+}
 
 func main() {
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
