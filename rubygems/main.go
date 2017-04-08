@@ -8,6 +8,9 @@ import (
 	_ "github.com/lib/pq"
 	"html/template"
 	"os"
+	"log"
+	"path/filepath"
+	"time"
 )
 
 func check(e error) {
@@ -21,37 +24,47 @@ type Rubygem struct {
 	Name string `json:"name"`
 }
 
+const sqlTemplateFile = "fetch_gems.sql"
+
+func loadTemplate()(*template.Template) {
+	currentPath, err := os.Getwd()
+	check(err)
+
+	return template.Must(template.ParseFiles(filepath.Join(currentPath,sqlTemplateFile)))
+}
+
 func fetchGemsBatch(startId int) ([]Rubygem, error) {
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
 	check(err)
 	defer db.Close()
 
-	tpl := template.Must(template.ParseFiles("fetch_gems.sql"))
-	var sql_str bytes.Buffer
+	tpl := loadTemplate()
+	var sqlStr bytes.Buffer
 
-	var gems = make([]Rubygem, 10)
-	tpl.Execute(&sql_str, startId)
-	rows, err := db.Query(string(sql_str.Bytes()))
+	tpl.Execute(&sqlStr, startId)
+	rows, err := db.Query(string(sqlStr.Bytes()))
 	check(err)
 	defer rows.Close()
 
-	fmt.Println(string(sql_str.Bytes()))
+	fmt.Println(string(sqlStr.Bytes()))
 
+	var gems = make([]Rubygem, 10)
 	for rows.Next() {
 		g := Rubygem{}
 
 		err := rows.Scan(&g.Id, &g.Name)
-		if err != nil {
-		  if err == sql.ErrNoRows {
-			  return nil, sql.ErrNoRows
-		  } else {
-			  panic(err)
-		  }
-		}
+		check(err)
 
 		gems = append(gems, g)
 	}
-	check(rows.Err())
+	if rows.Err() != nil {
+		if rows.Err() == sql.ErrNoRows {
+			log.Print(rows.Err())
+			return nil, sql.ErrNoRows
+		} else {
+			panic(rows.Err())
+		}
+	}
 
 	return gems, nil
 }
@@ -60,10 +73,20 @@ func fetchGems() []Rubygem {
 	var gems = make([]Rubygem, 10)
 
 	pos := 0
-	for rows, err := fetchGemsBatch(pos); err != nil; {
+	for {
+		rows, err := fetchGemsBatch(pos)
+		if err != nil {
+			break
+		}
 		gems = append(gems, rows...)
-		// grab the last row id
-		pos = rows[len(rows) -1].Id
+
+		pos = rows[len(rows)-1].Id
+		fmt.Printf("The is id %d\n", pos)
+		time.Sleep(time.Second * 1)
+
+		if rows[len(rows)-1].Id > 20000 {
+			break
+		}
 	}
 
 	return gems
