@@ -1,1 +1,1 @@
-SELECT id, name FROM rubygems WHERE id > {{ . }} LIMIT 1000
+SELECT id, name FROM rubygems WHERE id > {{ . }} ORDER BY created_at LIMIT 10000

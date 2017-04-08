@@ -5,12 +5,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	_ "github.com/lib/pq"
 	"html/template"
-	"os"
 	"log"
+	"os"
 	"path/filepath"
-	"time"
+
+	_ "github.com/lib/pq"
+	//"time"
 )
 
 func check(e error) {
@@ -26,11 +27,11 @@ type Rubygem struct {
 
 const sqlTemplateFile = "fetch_gems.sql"
 
-func loadTemplate()(*template.Template) {
+func loadTemplate() *template.Template {
 	currentPath, err := os.Getwd()
 	check(err)
 
-	return template.Must(template.ParseFiles(filepath.Join(currentPath,sqlTemplateFile)))
+	return template.Must(template.ParseFiles(filepath.Join(currentPath, sqlTemplateFile)))
 }
 
 func fetchGemsBatch(startId int) ([]Rubygem, error) {
@@ -48,7 +49,7 @@ func fetchGemsBatch(startId int) ([]Rubygem, error) {
 
 	fmt.Println(string(sqlStr.Bytes()))
 
-	var gems = make([]Rubygem, 10)
+	var gems []Rubygem
 	for rows.Next() {
 		g := Rubygem{}
 
@@ -70,7 +71,7 @@ func fetchGemsBatch(startId int) ([]Rubygem, error) {
 }
 
 func fetchGems() []Rubygem {
-	var gems = make([]Rubygem, 10)
+	var gems []Rubygem
 
 	pos := 0
 	for {
@@ -80,13 +81,17 @@ func fetchGems() []Rubygem {
 		}
 		gems = append(gems, rows...)
 
-		pos = rows[len(rows)-1].Id
-		fmt.Printf("The is id %d\n", pos)
-		time.Sleep(time.Second * 1)
-
-		if rows[len(rows)-1].Id > 20000 {
+		// TODO: break if err != nil, not by checking row size.
+		if len(rows) == 0 {
 			break
 		}
+
+		pos = rows[len(rows)-1].Id
+		fmt.Printf("The is id %d\n", pos)
+
+		//if rows[len(rows)-1].Id > 20000 {
+		//	break
+		//}
 	}
 
 	return gems
