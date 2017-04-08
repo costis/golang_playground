@@ -2,51 +2,56 @@ package main
 
 import "database/sql"
 import (
-	"fmt"
+	"encoding/json"
 	_ "github.com/lib/pq"
-	"log"
+	"os"
 )
 
-var (
-	name string
-)
-
-type rubygem struct {
-	Name string
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
+
+type Rubygem struct {
+	Id   int `json:"id"`
+	Name string `json:"name"`
+}
+
+var gems = make([]Rubygem, 10)
 
 func main() {
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
+
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT name from rubygems WHERE id > $1 LIMIT 10")
-	if err != nil {
-		log.Fatal(err)
-	}
+	stmt, err := db.Prepare("SELECT id, name FROM rubygems WHERE id > $1 LIMIT 100")
+	check(err)
 	defer stmt.Close()
 
 	rows, err := stmt.Query(100)
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
 	defer rows.Close()
-	// do we need this? or just db.Close() is enough?
 
 	for rows.Next() {
-		err := rows.Scan(&name)
-		if err != nil {
-			log.Fatal(nil)
-		}
+		g := Rubygem{}
 
-		fmt.Println(name)
+		err := rows.Scan(&g.Id, &g.Name)
+		check(err)
+
+		gems = append(gems, g)
 	}
 
 	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
 
+	f, err := os.Create("gems.json")
+	check(err)
+
+	jsonBytes, err := json.Marshal(gems)
+	check(err)
+
+	f.WriteString(string(jsonBytes))
+	f.Close()
 }
