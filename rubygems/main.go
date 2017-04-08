@@ -19,12 +19,12 @@ type Rubygem struct {
 	Name string `json:"name"`
 }
 
-var gems = make([]Rubygem, 10)
 
-func main() {
+func fetchGems()([]Rubygem) {
+	var gems = make([]Rubygem, 10)
+
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
 	check(err)
-
 	defer db.Close()
 
 	stmt, err := db.Prepare("SELECT id, name FROM rubygems WHERE id > $1 LIMIT 100")
@@ -46,6 +46,13 @@ func main() {
 
 	err = rows.Err()
 	check(err)
+
+	return gems
+}
+
+
+func main() {
+	gems := fetchGems()
 
 	jsonBytes, err := json.Marshal(gems)
 	cnt, err := saveJSON(jsonBytes)
