@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	_ "github.com/lib/pq"
 	"os"
+	"fmt"
 )
 
 func check(e error) {
@@ -46,12 +47,22 @@ func main() {
 	err = rows.Err()
 	check(err)
 
-	f, err := os.Create("gems.json")
-	check(err)
-
 	jsonBytes, err := json.Marshal(gems)
+	cnt, err := saveJSON(jsonBytes)
 	check(err)
 
-	f.WriteString(string(jsonBytes))
-	f.Close()
+	fmt.Printf("Written %d bytes\n", cnt)
+}
+
+func saveJSON(b []byte)(cnt int, er error) {
+	f, err := os.Create("out.json")
+	check(err)
+	defer f.Close()
+
+	cnt, e := f.Write(b)
+	if e != nil {
+		return cnt, e
+	}
+
+	return cnt, nil
 }
