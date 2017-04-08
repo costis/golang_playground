@@ -21,7 +21,7 @@ type Rubygem struct {
 	Name string `json:"name"`
 }
 
-func fetchGemsBatch(startId int) ([]Rubygem) {
+func fetchGemsBatch(startId int) ([]Rubygem, error) {
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
 	check(err)
 	defer db.Close()
@@ -35,22 +35,36 @@ func fetchGemsBatch(startId int) ([]Rubygem) {
 	check(err)
 	defer rows.Close()
 
+	fmt.Println(string(sql_str.Bytes()))
+
 	for rows.Next() {
 		g := Rubygem{}
 
 		err := rows.Scan(&g.Id, &g.Name)
-		check(err)
+		if err != nil {
+		  if err == sql.ErrNoRows {
+			  return nil, sql.ErrNoRows
+		  } else {
+			  panic(err)
+		  }
+		}
 
 		gems = append(gems, g)
 	}
 	check(rows.Err())
 
-	return gems
+	return gems, nil
 }
 
 func fetchGems() []Rubygem {
 	var gems = make([]Rubygem, 10)
-	gems = append(gems, fetchGemsBatch(0)...)
+
+	pos := 0
+	for rows, err := fetchGemsBatch(pos); err != nil; {
+		gems = append(gems, rows...)
+		// grab the last row id
+		pos = rows[len(rows) -1].Id
+	}
 
 	return gems
 }
