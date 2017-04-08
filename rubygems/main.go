@@ -21,22 +21,17 @@ type Rubygem struct {
 	Name string `json:"name"`
 }
 
-func fetchGems() []Rubygem {
-	var gems = make([]Rubygem, 10)
-
-	tpl := template.Must(template.ParseFiles("fetch_gems.sql"))
-	var sql_str bytes.Buffer
-	tpl.Execute(&sql_str, nil)
-
+func fetchGemsBatch(startId int) ([]Rubygem) {
 	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
 	check(err)
 	defer db.Close()
 
-	stmt, err := db.Prepare(string(sql_str.Bytes()))
-	check(err)
-	defer stmt.Close()
+	tpl := template.Must(template.ParseFiles("fetch_gems.sql"))
+	var sql_str bytes.Buffer
 
-	rows, err := stmt.Query()
+	var gems = make([]Rubygem, 10)
+	tpl.Execute(&sql_str, startId)
+	rows, err := db.Query(string(sql_str.Bytes()))
 	check(err)
 	defer rows.Close()
 
@@ -48,8 +43,14 @@ func fetchGems() []Rubygem {
 
 		gems = append(gems, g)
 	}
-	err = rows.Err()
-	check(err)
+	check(rows.Err())
+
+	return gems
+}
+
+func fetchGems() []Rubygem {
+	var gems = make([]Rubygem, 10)
+	gems = append(gems, fetchGemsBatch(0)...)
 
 	return gems
 }
