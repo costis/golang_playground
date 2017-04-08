@@ -1,0 +1,1 @@
+SELECT id, name FROM rubygems WHERE id > 0 LIMIT 100
