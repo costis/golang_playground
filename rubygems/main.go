@@ -25,13 +25,15 @@ type Rubygem struct {
 	Name string `json:"name"`
 }
 
-const sqlTemplateFile = "fetch_gems.sql"
+const dbConnStr = `user=postgres dbname=rubygems sslmode=disable`
+const sqlFetchGemsBatch = `fetch_gems.sql`
+const sqlFetchGemDetail = `fetch_gem_detail.sql`
 
 func loadTemplate() *template.Template {
 	currentPath, err := os.Getwd()
 	check(err)
 
-	return template.Must(template.ParseFiles(filepath.Join(currentPath, sqlTemplateFile)))
+	return template.Must(template.ParseFiles(filepath.Join(currentPath, sqlFetchGemsBatch)))
 }
 
 func fetchGemsBatch(startId int) ([]Rubygem, error) {
@@ -97,10 +99,16 @@ func fetchGems() []Rubygem {
 	return gems
 }
 
+//func fetchGemDetail() Rubygem {
+//	db, err : = sql.Open(`postgres`, dbConnStr)
+//
+//	return nil
+//}
+
 func main() {
 	gems := fetchGems()
 
-	jsonBytes, err := json.Marshal(gems)
+	jsonBytes, err := json.MarshalIndent(gems, "" , "  ")
 	cnt, err := saveJSON(jsonBytes)
 	check(err)
 
