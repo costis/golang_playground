@@ -20,19 +20,36 @@ func check(e error) {
 }
 
 const dbConnStr = `user=postgres dbname=rubygems sslmode=disable`
-const sqlFetchGemsBatch = `fetch_gems.sql`
-const sqlFetchGemDetail = `fetch_gem_detail.sql`
+const sqlFetchGemsWithLinks = `fetch_gems_with_links.sql`
+
+//const sqlFetchGemsBatch = `fetch_gems.sql`
+//const sqlFetchGemDetail = `fetch_gem_detail.sql`
 
 func loadTemplate() *template.Template {
 	currentPath, err := os.Getwd()
 	check(err)
 
-	return template.Must(template.ParseFiles(filepath.Join(currentPath, sqlFetchGemsBatch)))
+	return template.Must(template.ParseFiles(filepath.Join(currentPath, sqlFetchGemsWithLinks)))
+}
+
+type JsonNullString struct {
+	sql.NullString
+}
+
+func (v JsonNullString) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.String)
+	} else {
+		return json.Marshal(nil)
+	}
 }
 
 type Gem struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Downloads int
+	Codeurl   JsonNullString `json:"codeurl"`
+	Homeurl   JsonNullString `json:"homeurl"`
 }
 
 type Gems []Gem
@@ -69,7 +86,7 @@ func fetchGemsBatch(startId int) ([]Gem, error) {
 	for rows.Next() {
 		g := Gem{}
 
-		err := rows.Scan(&g.Id, &g.Name)
+		err := rows.Scan(&g.Id, &g.Name, &g.Downloads, &g.Codeurl, &g.Homeurl)
 		check(err)
 
 		gems = append(gems, g)
