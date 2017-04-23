@@ -3,26 +3,20 @@ package main
 import "database/sql"
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"os"
 	"path/filepath"
-
 	_ "github.com/lib/pq"
-	//"time"
+	"io"
+	"encoding/json"
 )
 
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
-}
-
-type Rubygem struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
 }
 
 const dbConnStr = `user=postgres dbname=rubygems sslmode=disable`
@@ -36,8 +30,28 @@ func loadTemplate() *template.Template {
 	return template.Must(template.ParseFiles(filepath.Join(currentPath, sqlFetchGemsBatch)))
 }
 
-func fetchGemsBatch(startId int) ([]Rubygem, error) {
-	db, err := sql.Open("postgres", "user=postgres dbname=rubygems sslmode=disable")
+type Gem struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Gems []Gem
+
+func (r *Gems) Load() {
+	gems := fetchGems()
+	*r = append(*r, gems...)
+}
+
+func (r *Gems) ToJSON(writer io.Writer) {
+	jsonBytes, err := json.MarshalIndent(r, "", "  ")
+	check(err)
+
+	_, err = writer.Write(jsonBytes)
+	check(err)
+}
+
+func fetchGemsBatch(startId int) ([]Gem, error) {
+	db, err := sql.Open("postgres", dbConnStr)
 	check(err)
 	defer db.Close()
 
@@ -51,9 +65,9 @@ func fetchGemsBatch(startId int) ([]Rubygem, error) {
 
 	fmt.Println(string(sqlStr.Bytes()))
 
-	var gems []Rubygem
+	var gems []Gem
 	for rows.Next() {
-		g := Rubygem{}
+		g := Gem{}
 
 		err := rows.Scan(&g.Id, &g.Name)
 		check(err)
@@ -72,8 +86,8 @@ func fetchGemsBatch(startId int) ([]Rubygem, error) {
 	return gems, nil
 }
 
-func fetchGems() []Rubygem {
-	var gems []Rubygem
+func fetchGems() []Gem {
+	var gems []Gem
 
 	pos := 0
 	for {
@@ -83,47 +97,23 @@ func fetchGems() []Rubygem {
 		}
 		gems = append(gems, rows...)
 
-		// TODO: break if err != nil, not by checking row size.
 		if len(rows) == 0 {
 			break
 		}
 
 		pos = rows[len(rows)-1].Id
-		fmt.Printf("The is id %d\n", pos)
-
-		//if rows[len(rows)-1].Id > 20000 {
-		//	break
-		//}
 	}
 
 	return gems
 }
 
-//func fetchGemDetail() Rubygem {
-//	db, err : = sql.Open(`postgres`, dbConnStr)
-//
-//	return nil
-//}
-
 func main() {
-	gems := fetchGems()
+	gems := make(Gems, 0)
+	gems.Load()
 
-	jsonBytes, err := json.MarshalIndent(gems, "" , "  ")
-	cnt, err := saveJSON(jsonBytes)
-	check(err)
-
-	fmt.Printf("Written %d bytes\n", cnt)
-}
-
-func saveJSON(b []byte) (cnt int, er error) {
+	// dump to file
 	f, err := os.Create("out.json")
 	check(err)
 	defer f.Close()
-
-	cnt, e := f.Write(b)
-	if e != nil {
-		return cnt, e
-	}
-
-	return cnt, nil
+	gems.ToJSON(f)
 }

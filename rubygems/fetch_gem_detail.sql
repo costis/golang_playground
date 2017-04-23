@@ -1,9 +1,9 @@
 SELECT
-  g.id   AS id,
-  g.name AS name,
-  ls.home   AS home,
-  ls.code   AS code,
-  v.number  AS version,
+  g.id     AS id,
+  g.name   AS name,
+  ls.home  AS home,
+  ls.code  AS code,
+  v.number AS version,
   v.created_at
 FROM
   gems g
